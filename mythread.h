@@ -35,33 +35,24 @@ public slots:
 
     void readyRead();
     void disconnected();
-   // void Tofilelist();
     void bytesWritten(qint64 bytes);
 
 private:
     QTcpSocket *socket;
     int socketDescriptor;
-     QString downloadFilePath;
-     QString uploadFilePath;
-     QString studentIndex;
-    //QString mCommandBuffer;
+    QString downloadFilePath;
+    QString uploadFilePath;
+    QString studentIndex;
     QByteArray mCommandBuffer;
-    //void DoLIST(QString Arg);
     void DoRETR(QString Arg);
-   // void ProcessCommand(QString ClientCommand);
-   // void ExecuteCommand(QString ClientCommand);
     void ProcessCommand(QByteArray ClientCommand);
     void ExecuteCommand(QByteArray ClientCommand);
     void ListFile(QString Path);
     void SendResponse(QString data);
-   // void mywork(int info);
-    //void mydownwork(int info);
-    //void DoINIT(QString Arg);
     void DoINIT(QByteArray Arg);
-   // void DoDownload(QString Arg);
     void DoNewDownload(QByteArray Arg);
     void DoDownload(QByteArray Arg);
-     void DoUpload(QByteArray Arg);
+    void DoUpload(QByteArray Arg);
     QFile *newfile;
 
 };

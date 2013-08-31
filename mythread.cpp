@@ -43,7 +43,7 @@ void MyThread::readyRead()
             ProcessCommand(mCommandBuffer);
             mCommandBuffer.clear();
         }
-        qDebug()<<mCommandBuffer;
+        //qDebug()<<mCommandBuffer;
 
     }
     else
@@ -53,8 +53,6 @@ void MyThread::readyRead()
 
 
     }
-
-
 
 
 
@@ -105,13 +103,13 @@ void MyThread::ExecuteCommand(QByteArray ClientCommand)
         //No arquments
         Command = ClientCommand.trimmed();
     }
-    //qDebug()<<"its here";
-    qDebug() << "Client: " << Command << " " << Arg;
+
+    qDebug() << "Client Replay: " << Command << " " << Arg;
 
 
     if(Command=="INIT")
     {
-        //qDebug()<<"dfdfdfdf";
+
         DoINIT(Arg);
 
     }
@@ -136,7 +134,7 @@ void MyThread::DoINIT(QByteArray Arg)
 {
 
     QString init="INIT damitha\n";
-    qDebug()<<"Command" <<init.toLatin1();
+    qDebug()<<"Command: " <<init.toLatin1();
     socket->write(init.toLatin1());
     socket->waitForBytesWritten(5000);
 
@@ -145,8 +143,7 @@ void MyThread::DoINIT(QByteArray Arg)
 void MyThread::DoNewDownload(QByteArray Arg)
 {
 
-    //if()
-    {
+
 
         QByteArray fileName = "";
         QByteArray File = "";
@@ -156,14 +153,13 @@ void MyThread::DoNewDownload(QByteArray Arg)
             //Contains arquments
             int pos = Arg.indexOf("FNEnd",0);
             fileName = Arg.mid(0,pos).trimmed();
-            File = Arg.mid(pos + 5);
-            qDebug()<<"filposition"<<pos;
+            File = Arg.mid(pos + 5);          
         }
 
 
         QString filepath=downloadFilePath;
         filepath.append(fileName);
-        qDebug()<<filepath;
+        //qDebug()<<filepath;
 
         newfile= new QFile(filepath);
         if(newfile->exists())
@@ -174,31 +170,32 @@ void MyThread::DoNewDownload(QByteArray Arg)
         if(!newfile->open(QIODevice::Append))
         {
 
-            qDebug()<<"error";
+            qDebug()<<"error Cant open the file";
         }
         else
         {
             if(File.endsWith("End\n"))
             {
 
+                 qDebug()<<"Download Started";
+
                  newfile->write(File.mid(0,(File.length()-4)));
                  newfile->close();
                  DownloadStrted=0;
+
+                 qDebug()<<"Download Done";
             }
             else {
+               qDebug()<<"Download Started";
+
                newfile->write(File);
-                DownloadStrted=1;
+               DownloadStrted=1;
             }
 
 
 
 
         }
-
-
-
-
-    }
 
 
 }
@@ -207,18 +204,18 @@ void MyThread::DoDownload(QByteArray Arg)
 {
     if(Arg.endsWith("End\n"))
     {
-        qDebug()<<Arg;
         newfile->write(Arg.mid(0,(Arg.length()-4)));
         newfile->close();
         DownloadStrted =0;
 
+        qDebug()<<"Download Done";
 
 
     }
     else
     {
         newfile->write(Arg);
-       // qDebug()<<Arg;
+
 
     }
 
@@ -227,18 +224,17 @@ void MyThread::DoDownload(QByteArray Arg)
 void MyThread::DoUpload(QByteArray Arg)
 {
     QFile newfile(uploadFilePath.append(Arg).trimmed());
-   // QFile newfile("D:/dk work/Motarola/project/upload/class.txt");
     if(newfile.exists())
     {
 
        // qDebug()<<Arg.append(studentIndex);
         QString startUpload="DOWNSTART ";
-       // startUpload.append(Arg.append(studentIndex));
         startUpload.append(Arg.trimmed());
         startUpload.append("FNEnd");
 
         socket->write(startUpload.toLatin1());
-        //QFile file(Path);
+        qDebug()<<"Server Command "<<startUpload;
+
         newfile.open(QIODevice::ReadOnly);
         while (!newfile.atEnd())
         {
@@ -248,6 +244,9 @@ void MyThread::DoUpload(QByteArray Arg)
         }
         newfile.close();
         socket->write("End\n");
+        socket->waitForBytesWritten(5000);
+
+         qDebug()<<"Upload Done";
 
     }
     else
