@@ -43,7 +43,7 @@ void MyThread::readyRead()
             ProcessCommand(mCommandBuffer);
             mCommandBuffer.clear();
         }
-        //qDebug()<<mCommandBuffer;
+        qDebug()<<mCommandBuffer;
 
     }
     else
@@ -105,13 +105,13 @@ void MyThread::ExecuteCommand(QByteArray ClientCommand)
         //No arquments
         Command = ClientCommand.trimmed();
     }
-    qDebug()<<"its here";
-    //qDebug() << "Client: " << Command << " " << Arg;
+    //qDebug()<<"its here";
+    qDebug() << "Client: " << Command << " " << Arg;
 
 
     if(Command=="INIT")
     {
-        qDebug()<<"dfdfdfdf";
+        //qDebug()<<"dfdfdfdf";
         DoINIT(Arg);
 
     }
@@ -136,6 +136,7 @@ void MyThread::DoINIT(QByteArray Arg)
 {
 
     QString init="INIT damitha\n";
+    qDebug()<<"Command" <<init.toLatin1();
     socket->write(init.toLatin1());
     socket->waitForBytesWritten(5000);
 
@@ -225,12 +226,15 @@ void MyThread::DoDownload(QByteArray Arg)
 
 void MyThread::DoUpload(QByteArray Arg)
 {
-    QFile newfile(uploadFilePath.append(Arg).append(studentIndex));
+    QFile newfile(uploadFilePath.append(Arg).trimmed());
+   // QFile newfile("D:/dk work/Motarola/project/upload/class.txt");
     if(newfile.exists())
     {
-        qDebug()<<Arg.append(studentIndex);
+
+       // qDebug()<<Arg.append(studentIndex);
         QString startUpload="DOWNSTART ";
-        startUpload.append(Arg.append(studentIndex));
+       // startUpload.append(Arg.append(studentIndex));
+        startUpload.append(Arg.trimmed());
         startUpload.append("FNEnd");
 
         socket->write(startUpload.toLatin1());
@@ -244,6 +248,11 @@ void MyThread::DoUpload(QByteArray Arg)
         }
         newfile.close();
         socket->write("End\n");
+
+    }
+    else
+    {
+        qDebug()<<"its in do upload file dose not exists";
 
     }
 
