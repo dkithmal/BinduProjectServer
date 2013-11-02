@@ -7,6 +7,7 @@
 QT       += core
 QT       += network
 QT       -= gui
+QT       += xml
 
 TARGET = FileTransferServer
 CONFIG   += console

@@ -11,6 +11,8 @@
 #include <QByteArray>
 #include <QFile>
 #include <QByteArray>
+#include <QTextCodec>
+#include <QtXml>
 
 
 class MyThread : public QThread
@@ -20,6 +22,14 @@ public:
     explicit MyThread(int ID,QObject *parent = 0);
     void run();
     int DownloadStrted;
+    QString subject;
+    QString type;
+    QString fileName;
+    QString basicFilePath;
+    QString filepath;
+    QString studentIndex;
+    QString toGetStudentUserName();
+    void toEditAdminXml(QString subject,QString type,QString fileName);
     enum RequestCommands
     {
         USER,
@@ -42,7 +52,7 @@ private:
     int socketDescriptor;
     QString downloadFilePath;
     QString uploadFilePath;
-    QString studentIndex;
+
     QByteArray mCommandBuffer;
     void DoRETR(QString Arg);
     void ProcessCommand(QByteArray ClientCommand);

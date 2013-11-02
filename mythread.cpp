@@ -6,15 +6,16 @@ MyThread::MyThread(int ID,QObject *parent) :
 {
     this->socketDescriptor = ID;
     DownloadStrted =0;
-    uploadFilePath="D:/dk work/Motarola/project/upload/";
-    downloadFilePath ="D:/dk work/Motarola/project/download/";
-    studentIndex ="114071H";
+    basicFilePath="D:/dk work/Motarola/BinduStudent/Student/";
+    filepath ="D:/dk work/Motarola/BinduStudent/Administration/Admin.xml";
+
+    studentIndex =toGetStudentUserName();
 }
 
 void MyThread::run()
 {
     //thered start hear
-    qDebug()<<socketDescriptor<<"starting therad";
+    qDebug()<<socketDescriptor<<"starting therad in Server";
     socket = new QTcpSocket();
     if(!socket->setSocketDescriptor(this->socketDescriptor))
     {
@@ -25,7 +26,7 @@ void MyThread::run()
     connect(socket,SIGNAL(readyRead()),this,SLOT(readyRead()),Qt::DirectConnection);
     connect(socket,SIGNAL(disconnected()),this,SLOT(disconnected()),Qt::DirectConnection);
     connect(socket,SIGNAL(bytesWritten(qint64)),this,SLOT(bytesWritten(qint64)),Qt::DirectConnection);
-   qDebug()<<socketDescriptor<<"cliant connected";
+    qDebug()<<socketDescriptor<<"cliant connected to Server";
 
 
    exec();
@@ -61,7 +62,7 @@ void MyThread::readyRead()
 
 void MyThread::disconnected()
 {
-     qDebug()<<socketDescriptor<<"Disconnected";
+    qDebug()<<socketDescriptor<<"Client Disconnected";
     socket->deleteLater();
     exit(0);
 
@@ -72,6 +73,7 @@ void MyThread::disconnected()
 
 void MyThread::ProcessCommand(QByteArray ClientCommand)
 {
+
 
     ExecuteCommand(ClientCommand);
 
@@ -88,7 +90,7 @@ void MyThread::bytesWritten(qint64 bytes)
 void MyThread::ExecuteCommand(QByteArray ClientCommand)
 {
 
-       QByteArray Command = "";
+        QByteArray Command = "";
         QByteArray Arg = "";
 
     if(ClientCommand.contains(" "))
@@ -104,7 +106,7 @@ void MyThread::ExecuteCommand(QByteArray ClientCommand)
         Command = ClientCommand.trimmed();
     }
 
-    qDebug() << "Client Replay: " << Command << " " << Arg;
+    qDebug() << "Client Replay: " << Command;
 
 
     if(Command=="INIT")
@@ -133,10 +135,13 @@ void MyThread::ExecuteCommand(QByteArray ClientCommand)
 void MyThread::DoINIT(QByteArray Arg)
 {
 
-    QString init="INIT damitha\n";
-    qDebug()<<"Command: " <<init.toLatin1();
+    //QString init="INIT damitha\n";
+    QString init="INIT ";
+    init.append(studentIndex);
+    init.append("\n");
     socket->write(init.toLatin1());
     socket->waitForBytesWritten(5000);
+    qDebug()<< "Server Reply :"<<init;
 
 }
 
@@ -145,23 +150,72 @@ void MyThread::DoNewDownload(QByteArray Arg)
 
 
 
-        QByteArray fileName = "";
+        QByteArray fileDiscription = "";
         QByteArray File = "";
 
         if(Arg.contains("FNEnd"))
         {
             //Contains arquments
             int pos = Arg.indexOf("FNEnd",0);
-            fileName = Arg.mid(0,pos).trimmed();
-            File = Arg.mid(pos + 5);          
+            fileDiscription = Arg.mid(0,pos).trimmed();
+            File = Arg.mid(pos + 5);
+
+            QString fileInfo =QString::fromUtf8(fileDiscription.data(), fileDiscription.size());
+            QStringList discriptionlist=fileInfo.split("/");
+            subject=discriptionlist.at(0);
+            type=discriptionlist.at(1);
+            fileName=discriptionlist.at(2);
+            toEditAdminXml(subject,type,fileName);
+            //qDebug()<<subject<<type<<fileName<<"SSSSSSSSSSSSSSSSSSSSSSSSSSSSSS";
         }
 
 
-        QString filepath=downloadFilePath;
-        filepath.append(fileName);
-        //qDebug()<<filepath;
+        //creating directry
+       QString createFileCrationPath=basicFilePath;
+       createFileCrationPath.append(subject);
+        if(QDir(createFileCrationPath).exists())
+        {
+            createFileCrationPath.append("/");
+            createFileCrationPath.append(type);
 
-        newfile= new QFile(filepath);
+            if(QDir(createFileCrationPath).exists())
+            {
+
+
+
+            }
+            else
+            {
+                QDir().mkdir(createFileCrationPath);
+
+            }
+
+        }
+        else
+        {
+            QDir().mkdir(createFileCrationPath);
+            createFileCrationPath.append("/");
+            createFileCrationPath.append(type);
+            if(QDir(createFileCrationPath).exists())
+            {
+
+            }
+            else
+            {
+                QDir().mkdir(createFileCrationPath);
+            }
+
+
+        }
+
+
+
+
+
+        createFileCrationPath.append("/");
+        createFileCrationPath.append(fileName);
+
+        newfile= new QFile(createFileCrationPath);
         if(newfile->exists())
         {
             newfile->remove();
@@ -184,6 +238,14 @@ void MyThread::DoNewDownload(QByteArray Arg)
                  DownloadStrted=0;
 
                  qDebug()<<"Download Done";
+                 //to give aknowlagement
+                 //QString sendResponeDone="DownloadDone damitha\n";
+                 QString sendResponeDone="DownloadDone ";
+                 sendResponeDone.append(studentIndex);
+                 sendResponeDone.append("\n");
+                 socket->write(sendResponeDone.toLatin1());
+                 socket->waitForBytesWritten(5000);
+                 qDebug()<< "Server Reply :"<<sendResponeDone;
             }
             else {
                qDebug()<<"Download Started";
@@ -210,6 +272,15 @@ void MyThread::DoDownload(QByteArray Arg)
 
         qDebug()<<"Download Done";
 
+        // to give acknoladement
+       //QString sendResponeDone="DownloadDone damitha\n";
+        QString sendResponeDone="DownloadDone ";
+        sendResponeDone.append(studentIndex);
+        sendResponeDone.append("\n");
+        socket->write(sendResponeDone.toLatin1());
+        socket->waitForBytesWritten(5000);
+        qDebug()<< "Server Reply :"<<sendResponeDone;
+
 
     }
     else
@@ -223,13 +294,24 @@ void MyThread::DoDownload(QByteArray Arg)
 
 void MyThread::DoUpload(QByteArray Arg)
 {
-    QFile newfile(uploadFilePath.append(Arg).trimmed());
+   QString creatingfilepath= basicFilePath;
+   creatingfilepath.append(QString::fromUtf8(Arg.trimmed().data(), Arg.trimmed().size()));
+   //creatingfilepath.append("-damitha.xml");
+   creatingfilepath.append("-");
+   creatingfilepath.append(studentIndex);
+   creatingfilepath.append(".xml");
+
+
+   qDebug()<<Arg.append(creatingfilepath)<<"craing filepath";
+
+    QFile newfile(creatingfilepath);
     if(newfile.exists())
     {
 
        // qDebug()<<Arg.append(studentIndex);
         QString startUpload="DOWNSTART ";
-        startUpload.append(Arg.trimmed());
+        //startUpload.append(Arg.trimmed());
+        startUpload.append(creatingfilepath.mid(creatingfilepath.lastIndexOf("/")+1));
         startUpload.append("FNEnd");
 
         socket->write(startUpload.toLatin1());
@@ -257,6 +339,146 @@ void MyThread::DoUpload(QByteArray Arg)
 
 
 }
+
+void MyThread::toEditAdminXml(QString subject,QString type,QString fileName)
+{
+    //qDebug()<<subject<<type<<fileName<<"SSSSSSSSSSSSSSSSSSSSSSSSSSSSSS";
+    if(!subject.isEmpty())
+    {
+        QFile newConfigFile(filepath);
+        if(!newConfigFile.open(QFile::ReadWrite| QIODevice::Text))
+        {
+
+        }
+        else
+        {
+            QDomDocument document;
+            QDomElement root;
+
+
+            if(newConfigFile.size()==0)
+            {
+                root = document.createElement("Administration");
+                QDomElement newSubject= document.createElement("Subject");
+                newSubject.setAttribute("SubjectName",subject);
+
+                QDomElement newHomeWorkOrNote=document.createElement(type);
+                newHomeWorkOrNote.setAttribute(type+"Name",fileName.mid(0,fileName.lastIndexOf(".")));
+                newSubject.appendChild(newHomeWorkOrNote);
+
+                root.appendChild(newSubject);
+
+
+            }
+            else
+            {
+                document.setContent(&newConfigFile);
+                root= document.firstChildElement();
+
+
+                QDomNodeList subjectList = root.elementsByTagName("Subject");
+
+
+                int x=0;
+                for(int i=0;i<subjectList.count();i++)
+                {
+
+                    QDomNode itemNode = subjectList.at(i);
+
+                    if(itemNode.isElement())
+                    {
+                        if(itemNode.toElement().attribute("SubjectName")==subject)
+                        {
+                            x=1;
+                            QDomElement newSubjectNode=itemNode.toElement();
+
+                            QDomElement newHomeWorkOrNote=document.createElement(type);
+                            newHomeWorkOrNote.setAttribute(type+"Name",fileName.mid(0,fileName.lastIndexOf(".")));
+                            newSubjectNode.appendChild(newHomeWorkOrNote);
+                            itemNode.toElement().appendChild(newHomeWorkOrNote);
+                            root.replaceChild(newSubjectNode,itemNode);
+
+                        }
+
+                    }
+                }
+
+                if(x==0)
+                {
+                    QDomElement newSubject= document.createElement("Subject");
+                    newSubject.setAttribute("SubjectName",subject);
+
+                    QDomElement newHomeWorkOrNote=document.createElement(type);
+                    newHomeWorkOrNote.setAttribute(type+"Name",fileName.mid(0,fileName.lastIndexOf(".")));
+                    newSubject.appendChild(newHomeWorkOrNote);
+                    root.appendChild(newSubject);
+
+                }
+
+
+
+
+
+
+
+
+            }
+
+            document.appendChild(root);
+            newConfigFile.close();
+
+            if(!newConfigFile.open(QFile::ReadWrite|QIODevice::Truncate | QIODevice::Text))
+            {
+
+            }
+            else
+            {
+                QTextStream stream(&newConfigFile);
+                stream <<document.toString();
+                newConfigFile.close();
+
+           }
+
+
+
+     }
+  }
+
+}
+
+QString MyThread::toGetStudentUserName()
+{
+    QFile newConfigFile(filepath);
+         if(!newConfigFile.open(QFile::ReadWrite| QIODevice::Text))
+         {
+
+         }
+         else
+         {
+             QDomDocument document;
+             QDomElement root;
+
+
+
+                 document.setContent(&newConfigFile);
+                 root= document.firstChildElement();
+
+
+                 QDomNodeList student= root.elementsByTagName("Student");
+                 return student.at(0).toElement().attribute("StudenttName");
+
+
+
+
+
+
+
+
+         }
+
+}
+
+
 
 
 
