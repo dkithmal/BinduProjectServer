@@ -6,10 +6,11 @@ MyThread::MyThread(int ID,QObject *parent) :
 {
     this->socketDescriptor = ID;
     DownloadStrted =0;
-    basicFilePath="D:/dk work/Motarola/BinduStudent/Student/";
-    filepath ="D:/dk work/Motarola/BinduStudent/Administration/Admin.xml";
+    basicFilePath="D:/dk work/Motarola/Project Location/Stdudent Path/Student/";
+    filepath ="D:/dk work/Motarola/Project Location/Stdudent Path/Administration/Admin.xml";
 
     studentIndex =toGetStudentUserName();
+
 }
 
 void MyThread::run()
@@ -35,6 +36,7 @@ void MyThread::run()
 
 void MyThread::readyRead()
 {
+
     //Append to the command buffer
     if(DownloadStrted==0)
     {
